@@ -9,4 +9,9 @@ public class TestController {
     public String test() {
         return "springboot + react connected!";
     }
+
+    @GetMapping("/")
+    public String index() {
+        return "home";
+    }
 }
