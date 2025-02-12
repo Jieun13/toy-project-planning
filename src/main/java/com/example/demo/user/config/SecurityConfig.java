@@ -23,9 +23,15 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig implements WebMvcConfigurer {
+
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**").allowedOrigins("http://localhost:3000");
+        registry.addMapping("/**")
+                .allowedOrigins("http://localhost:3000", "http://localhost:8080")  // Swagger UI 포트 추가
+                .allowedOrigins("http://localhost:3000")
+                .allowedMethods("GET", "POST", "PUT", "DELETE")  // 필요한 HTTP 메서드 설정
+                .allowedHeaders("*")  // 모든 헤더 허용
+                .allowCredentials(true);
     }
 
     private final OAuth2UserService oAuth2UserService;
@@ -36,7 +42,7 @@ public class SecurityConfig implements WebMvcConfigurer {
     @Bean
     public WebSecurityCustomizer configure(){
         return (web) -> web.ignoring()
-                .requestMatchers("/resources/**");
+                .requestMatchers("/resources/**", "/swagger-ui/**", "/v3/api-docs/**");
     }
 
     @Bean
@@ -51,7 +57,8 @@ public class SecurityConfig implements WebMvcConfigurer {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(new AntPathRequestMatcher("/api/**")).permitAll()
                         .requestMatchers(new AntPathRequestMatcher("/auth/**")).permitAll()
-                        .requestMatchers(new AntPathRequestMatcher("/**")).permitAll())
+//                        .requestMatchers(new AntPathRequestMatcher("/**")).permitAll())
+                        .anyRequest().permitAll())
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/login")
                         .authorizationEndpoint(authorizationEndpoint -> authorizationEndpoint.authorizationRequestRepository(oAuth2AuthorizationRequestBasedOnCookieRepository()))
