@@ -35,16 +35,4 @@ public class UserService {
         return userRepository.findByUsername(username).orElse(null);
     }
 
-    public boolean checkUsernameDuplicate(String username) {
-        return userRepository.findByUsername(username).isPresent();
-    }
-
-    public boolean checkEmailDuplicate(String email) {
-        return userRepository.findByEmail(email).isPresent();
-    }
-
-    public boolean isIdPasswordValid(String username, String password) {
-        User user = userRepository.findByUsername(username).orElse(null);
-        return user != null && bCryptPasswordEncoder.matches(password, user.getPassword());
-    }
 }

@@ -7,9 +7,11 @@ import com.example.demo.user.domain.User;
 import com.example.demo.user.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -28,27 +30,43 @@ public class ScheduleService {
         return scheduleRepository.findById(id).orElse(null);
     }
 
+    public List<Schedule> findAllByEmail(String email) {
+        List<Schedule> schedules = scheduleRepository.findAllByAuthor(email);
+
+        if (schedules.isEmpty()) {
+            System.out.println("No schedules found for author: " + email);
+            return Collections.emptyList();
+        }
+        return schedules;
+    }
+
     public List<Schedule> findAll() {
         return scheduleRepository.findAll();
     }
 
-    public List<Schedule> findByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
-        return scheduleRepository.findByDateRange(startDate, endDate);
-    }
-
-    public List<Schedule> findByUserId(Long userId) {
-        User author = userService.findById(userId);
-        return scheduleRepository.findAllByAuthor(author);
+    public List<Schedule> findByDateRangeAndAuthor(LocalDateTime startDate, LocalDateTime endDate, String email) {
+        User user = userService.findByEmail(email);
+        return scheduleRepository.findByDateRangeAndAuthor(startDate, endDate, user);
     }
 
     @Transactional
     public Schedule update(Long id, ScheduleRequest request, String author) {
         Schedule schedule = findById(id);
+        validateAuthor(schedule, author); // 🔹 작성자 검증 로직을 메서드로 분리
         return schedule.update(request.toEntity(author));
     }
 
     @Transactional
-    public void delete(Long id) {
-        scheduleRepository.deleteById(id);
+    public void delete(Long id, String author) {
+        Schedule schedule = findById(id);
+        validateAuthor(schedule, author); // 🔹 작성자 검증
+        scheduleRepository.delete(schedule); // 🔹 deleteById → delete(schedule) 변경
+    }
+
+    // 🔹 중복되는 작성자 검증 로직을 별도 메서드로 분리
+    private void validateAuthor(Schedule schedule, String author) {
+        if (!schedule.getAuthor().equals(author)) {
+            throw new AccessDeniedException("수정/삭제 권한이 없습니다.");
+        }
     }
 }

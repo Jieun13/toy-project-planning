@@ -8,14 +8,11 @@ import com.example.demo.user.config.TokenProvider;
 import lombok.AllArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 
-import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -26,47 +23,34 @@ import java.util.List;
 public class ScheduleController {
 
     private final ScheduleService scheduleService;
-    private final TokenProvider tokenProvider;
 
     @PostMapping
     @Operation(summary = "새 일정 생성", description = "새로운 일정을 생성한다.")
     public ResponseEntity<ScheduleResponse> create(
-            @RequestBody ScheduleRequest request,
-            @RequestHeader("Authorization") String authorizationHeader) { // 🔹 헤더에서 토큰 직접 받기
+            @RequestBody ScheduleRequest request) {
 
-        // 🔹 Bearer 토큰에서 실제 토큰 값만 추출
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            throw new RuntimeException("인증되지 않은 사용자입니다.");
-        }
-        String token = authorizationHeader.substring(7); // "Bearer " 부분 제거
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
 
-        // 🔹 토큰에서 사용자 정보 추출
-        Authentication authentication = tokenProvider.getAuthentication(token);
-        if (authentication == null || authentication.getPrincipal() == null) {
-            throw new RuntimeException("유효하지 않은 토큰입니다.");
-        }
-        String username = authentication.getName();
-        System.out.println(username); // 🔵 인증된 사용자 확인
-
-        Schedule newSchedule = scheduleService.save(request, username);
-        System.out.println(request.getStartDateTime() + " " + request.getEndDateTime());
-        System.out.println(newSchedule.getStartTime() + " " + newSchedule.getEndTime());
+        Schedule newSchedule = scheduleService.save(request, email);
         return ResponseEntity.ok(ScheduleResponse.fromEntity(newSchedule));
     }
 
     @GetMapping
-    @Operation(summary="일정 전체 조회", description="전체 일정을 조회한다.")
+    @Operation(summary="사용자 일정 전체 조회", description="사용자가 작성한 전체 일정을 조회한다.")
     public ResponseEntity<List<ScheduleResponse>> getAll(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start_date,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end_date) {
+
         List<Schedule> schedules;
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
         // 날짜 필터가 있을 경우, 특정 기간 조회
         if (start_date != null && end_date != null) {
-            schedules = scheduleService.findByDateRange(start_date.atStartOfDay(), end_date.atTime(LocalTime.MAX));
+            schedules = scheduleService.findByDateRangeAndAuthor(start_date.atStartOfDay(), end_date.atTime(LocalTime.MAX), email);
         } else {
             // 필터가 없으면 전체 일정 조회
-            schedules = scheduleService.findAll();
+            schedules = scheduleService.findAllByEmail(email);
         }
 
         List<ScheduleResponse> responses = schedules.stream()
@@ -82,27 +66,19 @@ public class ScheduleController {
         return ResponseEntity.ok(ScheduleResponse.fromEntity(schedule));
     }
 
-    @GetMapping("/api/{userId}")
-    @Operation(summary="유저 아이디로 일정 조회", description="유저가 생성한 일정을 조회한다.")
-    public ResponseEntity<List<ScheduleResponse>> getByUserId(@PathVariable("userId") Long userId) {
-        List<Schedule> schedules = scheduleService.findByUserId(userId);
-        List<ScheduleResponse> responses = schedules.stream()
-                .map(ScheduleResponse::fromEntity)
-                .toList();
-        return ResponseEntity.ok(responses);
-    }
-
     @PutMapping("/{scheduleId}")
     @Operation(summary="일정 수정", description="일정을 수정한다.")
-    public ResponseEntity<ScheduleResponse> update(@PathVariable("scheduleId") Long scheduleId, @RequestBody ScheduleRequest request, Principal principal) {
-        Schedule schedule = scheduleService.update(scheduleId, request, principal.getName());
+    public ResponseEntity<ScheduleResponse> update(@PathVariable("scheduleId") Long scheduleId, @RequestBody ScheduleRequest request) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Schedule schedule = scheduleService.update(scheduleId, request, email);
         return ResponseEntity.ok(ScheduleResponse.fromEntity(schedule));
     }
 
     @DeleteMapping("/{scheduleId}")
     @Operation(summary="일정 삭제", description="일정을 삭제한다.")
     public ResponseEntity<ScheduleResponse> delete(@PathVariable("scheduleId") Long scheduleId) {
-        scheduleService.delete(scheduleId);
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        scheduleService.delete(scheduleId, email);
         return ResponseEntity.noContent().build();
     }
 }
