@@ -18,4 +18,6 @@ public class ChatMessage {
 
     @ManyToOne(fetch = FetchType.LAZY)
     private User sender;
+
+    private MessageType messageType;
 }

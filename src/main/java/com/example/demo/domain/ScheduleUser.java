@@ -2,11 +2,12 @@ package com.example.demo.domain;
 
 import com.example.demo.user.domain.User;
 import jakarta.persistence.*;
-import lombok.Builder;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Table(name="schedule_user_table")
+@Getter
+@NoArgsConstructor
 public class ScheduleUser {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -14,7 +15,7 @@ public class ScheduleUser {
 
     private String scheduleName;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "schedule_id")
     private Schedule schedule;
 

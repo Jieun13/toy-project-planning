@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.domain.Schedule;
 import com.example.demo.dto.ScheduleRequest;
 import com.example.demo.repository.ScheduleRepository;
+import com.example.demo.repository.ScheduleUserRepository;
 import com.example.demo.user.domain.User;
 import com.example.demo.user.service.UserService;
 import jakarta.transaction.Transactional;
@@ -19,6 +20,7 @@ import java.util.List;
 public class ScheduleService {
     private final ScheduleRepository scheduleRepository;
     private final UserService userService;
+    private final ScheduleUserRepository scheduleUserRepository;
 
     @Transactional
     public Schedule save(ScheduleRequest request, String author) {
@@ -60,6 +62,7 @@ public class ScheduleService {
     public void delete(Long id, String author) {
         Schedule schedule = findById(id);
         validateAuthor(schedule, author); // 🔹 작성자 검증
+        scheduleUserRepository.deleteByScheduleId(id);
         scheduleRepository.delete(schedule); // 🔹 deleteById → delete(schedule) 변경
     }
 

@@ -28,8 +28,7 @@ public class SecurityConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
                 .allowedOrigins("http://localhost:3000", "http://localhost:8080")  // Swagger UI 포트 추가
-                .allowedOrigins("http://localhost:3000")
-                .allowedMethods("GET", "POST", "PUT", "DELETE")  // 필요한 HTTP 메서드 설정
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH")  // 필요한 HTTP 메서드 설정
                 .allowedHeaders("*")  // 모든 헤더 허용
                 .allowCredentials(true);
     }
