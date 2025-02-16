@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -35,6 +36,11 @@ public class UserApiController {
     public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response){
         CookieUtil.deleteCookie(request, response, "jwt_token");
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<String> getUser(){
+        return ResponseEntity.ok(SecurityContextHolder.getContext().getAuthentication().getName());
     }
 
     @GetMapping("/profile")

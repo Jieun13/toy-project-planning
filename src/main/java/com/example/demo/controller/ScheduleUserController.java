@@ -27,6 +27,9 @@ public class ScheduleUserController {
     @PostMapping("/{scheduleId}/invitations")
     @Operation(summary = "사용자 초대", description = "일정에 사용자를 초대합니다.")
     public ResponseEntity<String> invite(@PathVariable("scheduleId") Long scheduleId, @RequestBody InviteRequest request) {
+        if(getAuthEmail().equals(request.getEmail())){
+            return ResponseEntity.ok("본인은 초대할 수 없습니다.");
+        }
         scheduleUserService.inviteUser(scheduleId, request, getAuthEmail());
         return ResponseEntity.ok("초대가 완료되었습니다.");
     }
@@ -64,7 +67,6 @@ public class ScheduleUserController {
     @Operation(summary = "초대 요청 목록", description = "사용자가 초대 받은 요청 목록을 조회합니다.")
     public ResponseEntity<List<ScheduleUserResponse>> getInvitationList() {
         List<ScheduleUserResponse> list = scheduleUserService.getInvitationList(getAuthEmail());
-        System.out.println("초대 목록: " + list); // 🔹 로그 추가
         return ResponseEntity.ok(list);
     }
 }
