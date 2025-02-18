@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.Operation;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -74,7 +73,7 @@ public class ScheduleController {
 
     @DeleteMapping("/{scheduleId}")
     @Operation(summary="일정 삭제", description="일정을 삭제한다.")
-    public ResponseEntity<ScheduleResponse> delete(@PathVariable("scheduleId") Long scheduleId) {
+    public ResponseEntity<Void> delete(@PathVariable("scheduleId") Long scheduleId) {
         scheduleService.delete(scheduleId, getAuthEmail());
         return ResponseEntity.noContent().build();
     }

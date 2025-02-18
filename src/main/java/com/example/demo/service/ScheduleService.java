@@ -5,6 +5,7 @@ import com.example.demo.dto.ScheduleRequest;
 import com.example.demo.repository.ScheduleRepository;
 import com.example.demo.repository.ScheduleUserRepository;
 import com.example.demo.user.domain.User;
+import com.example.demo.user.repository.UserRepository;
 import com.example.demo.user.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
@@ -19,8 +20,8 @@ import java.util.List;
 @AllArgsConstructor
 public class ScheduleService {
     private final ScheduleRepository scheduleRepository;
-    private final UserService userService;
     private final ScheduleUserRepository scheduleUserRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public Schedule save(ScheduleRequest request, String author) {
@@ -47,7 +48,7 @@ public class ScheduleService {
     }
 
     public List<Schedule> findByDateRangeAndAuthor(LocalDateTime startDate, LocalDateTime endDate, String email) {
-        User user = userService.findByEmail(email);
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new AccessDeniedException("사용자를 찾을 수 없습니다."));
         return scheduleRepository.findByDateRangeAndAuthor(startDate, endDate, user);
     }
 
